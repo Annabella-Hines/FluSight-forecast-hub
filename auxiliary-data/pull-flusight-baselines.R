@@ -8,21 +8,23 @@ library(lubridate)
 current_ref_date <- ceiling_date(Sys.Date(), "week") - days(1)
 date_str <- format(current_ref_date, "%Y-%m-%d")
 
-# Define baseline types (same for folder name and file type)
+# Types and their source folders
 baseline_types <- c("FluSight-baseline", "FluSight-base_seasonal", "FluSight-equal_cat")
 baseline_folders <- c("Flusight-baseline", "Flusight-seasonal-baseline", "Flusight-equal_cat")
 
-# Loop through each type
-for (type in baseline_types) {
+# Loop and download each one
+for (i in seq_along(baseline_types)) {
+  type <- baseline_types[i]
+  folder <- baseline_folders[i]
   filename <- paste0(date_str, "-", type, ".csv")
   
-  # Construct file URL - now using type in the GitHub path
+  # Corrected file URL
   file_url <- paste0(
     "https://raw.githubusercontent.com/cdcepi/Flusight-baseline/main/weekly-submission/forecasts/",
-    type, "/", filename
+    folder, "/", filename
   )
   
-  # Construct local path - also saving to folder by type
+  # Save to model-output/<type>/<filename>
   target_dir <- file.path("model-output", type)
   dir.create(target_dir, recursive = TRUE, showWarnings = FALSE)
   destfile <- file.path(target_dir, filename)
@@ -30,13 +32,14 @@ for (type in baseline_types) {
   # Attempt download
   download_success <- tryCatch({
     download.file(url = file_url, destfile = destfile, method = "libcurl")
-    cat("✅ Saved:", destfile, "\n")
+    cat("✅ Downloaded and saved:", destfile, "\n")
     TRUE
   }, error = function(e) {
     cat("❌ Failed to download", filename, "\nReason:", e$message, "\n")
     FALSE
   })
 }
+
 
 
 
