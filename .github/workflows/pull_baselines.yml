@@ -38,7 +38,7 @@ jobs:
           "lubridate"))
         shell: Rscript {0}
       - name: Pull baseline csv files
-        run:  Rscript pull-flusight-baselines.R
+        run:  Rscript auxiliary-data/pull-flusight-baselines.R
       - name: Commit changes and create PR 🚀
         if: ${{ inputs.publish || github.event_name == 'schedule' }}
         env:
