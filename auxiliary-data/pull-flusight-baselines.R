@@ -5,7 +5,7 @@
 library(lubridate)
 
 # Get last Saturday
-current_ref_date <- ceiling_date(Sys.Date(), "week") - days(1)
+current_ref_date <- ceiling_date(Sys.Date(), "week") - days(8)
 date_str <- format(current_ref_date, "%Y-%m-%d")
 
 # Types and their source folders
