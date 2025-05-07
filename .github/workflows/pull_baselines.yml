@@ -42,7 +42,7 @@ jobs:
       - name: Commit changes and create PR 🚀
         if: ${{ inputs.publish || github.event_name == 'schedule' }}
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
         run: |
           PR_DATETIME=$(date +'%Y-%m-%d_%H-%M-%S')
           git config user.name "github-actions[bot]"
