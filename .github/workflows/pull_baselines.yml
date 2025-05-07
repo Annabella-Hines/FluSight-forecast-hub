@@ -56,3 +56,16 @@ jobs:
             --base main \
             --head create/baselines/"$PR_DATETIME"
         shell: bash
+
+      - name: Run FluSight validations
+        run: |
+          install.packages("pak", repos = "https://cran.rstudio.com")
+          pak::pak("hubverse/hubValidations")
+          pak::pak("sessioninfo")
+
+          Rscript -e "
+            library(hubValidations)
+            v <- validate_submission()
+            check_for_errors(v, verbose = TRUE)"
+        shell: bash
+
