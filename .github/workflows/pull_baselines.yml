@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   pull_baselines:
-    if: github.repository_owner == 'cdcepi'
+    #if: github.repository_owner == 'cdcepi'
     runs-on: macOS-latest
     steps:    
       - name: Checkout repo
