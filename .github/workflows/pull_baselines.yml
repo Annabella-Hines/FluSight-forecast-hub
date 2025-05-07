@@ -42,7 +42,7 @@ jobs:
       - name: Commit changes and create PR 🚀
         if: ${{ inputs.publish || github.event_name == 'schedule' }}
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           PR_DATETIME=$(date +'%Y-%m-%d_%H-%M-%S')
           git config user.name "github-actions[bot]"
@@ -51,6 +51,7 @@ jobs:
           git add .
           git commit -m "Pull baseline forecasts"
           git push --set-upstream origin create/baselines/"$PR_DATETIME"
+          echo "${GH_TOKEN}" | gh auth login --with-token
           gh pr create --title "Add new baseline forecasts" \
             --body "This PR adds new baseline forecasts." \
             --base main \
