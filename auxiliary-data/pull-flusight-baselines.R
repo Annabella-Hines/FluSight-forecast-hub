@@ -47,7 +47,7 @@ for (i in seq_along(baseline_types)) {
   if (download_success) {
     cat("🔍 Validating:", destfile, "\n")
     validation_result <- tryCatch({
-      v <- hubValidations::validate_file(destfile)
+      v <- hubValidations::validate_file_local(destfile)
       if (!v$valid) {
         cat("❌ Validation failed for", destfile, "\n")
         validation_errors[[length(validation_errors) + 1]] <- list(file = destfile, error = "Invalid file format or content.")
