@@ -40,9 +40,19 @@ jobs:
         shell: Rscript {0}
       - name: Pull baseline csv files
         run:  Rscript auxiliary-data/pull-flusight-baselines.R
+      - name: Show validation output in logs (for debugging)
+        run: cat validation_result.md || echo "No validation_result.md found"
       - name: Read validation result
         id: validation
-        run: echo "body=$(<validation_result.md)" >> $GITHUB_OUTPUT
+        run: |
+          {
+            echo 'body<<EOF'
+            cat validation_result.md
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+      #- name: Read validation result
+        #id: validation
+        #run: echo "body=$(<validation_result.md)" >> $GITHUB_OUTPUT
       - name: Commit changes and create PR 🚀
         if: ${{ inputs.publish || github.event_name == 'schedule' }}
         env:
