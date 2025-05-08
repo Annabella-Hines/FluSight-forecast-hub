@@ -35,7 +35,7 @@ jobs:
           install.packages("pak")
           pak::pkg_install(c(
           "readr", "dplyr", "tidyr",
-          "lubridate",
+          "lubridate", "fs",
           "github::hubverse-org/hubValidations"))
         shell: Rscript {0}
       - name: Pull baseline csv files
