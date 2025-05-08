@@ -49,19 +49,16 @@ tryCatch({
     if (download_success) {
       cat("🔍 Validating:", destfile, "\n")
       tryCatch({
-        v <- hubValidations::validate_submission(hub_path = ".", file_path = rel_path)
+       v <- hubValidations::validate_submission(hub_path = ".", file_path = rel_path)
 
-        # Try extracting individual error messages
-        error_report <- tryCatch({
-          errors <- hubValidations::check_for_errors(v, verbose = FALSE)
-          if (length(errors$errors) > 0) {
-            paste0("❌ **", rel_path, "**:\n- ", paste(errors$errors, collapse = "\n- "))
-          } else {
-            paste0("✅ **", rel_path, "** passed validation.")
-          }
-        }, error = function(e) {
-          paste0("❌ **", rel_path, "**:\n", e$message)
-        })
+# Manually extract and format error messages
+if (!is.null(v$errors) && length(v$errors) > 0) {
+  formatted_errors <- paste0("❌ **", rel_path, "**:\n- ", paste(v$errors, collapse = "\n- "))
+  validation_messages <- c(validation_messages, formatted_errors)
+} else {
+  validation_messages <- c(validation_messages, paste0("✅ **", rel_path, "** passed validation."))
+}
+
 
         validation_messages <- c(validation_messages, error_report)
 
