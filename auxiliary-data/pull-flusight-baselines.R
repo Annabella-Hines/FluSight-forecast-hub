@@ -6,73 +6,52 @@ library(fs)
 # Prepare output file for PR body
 result_file <- "validation_result.md"
 
-# Wrap everything in a top-level error handler
-tryCatch({
+# Set up date and file paths
+current_ref_date <- ceiling_date(Sys.Date(), "week") - days(1)
+date_str <- format(current_ref_date, "%Y-%m-%d")
 
-  # Set up reference date and forecast filenames
-  current_ref_date <- ceiling_date(Sys.Date(), "week") - days(1)
-  date_str <- format(current_ref_date, "%Y-%m-%d")
+baseline_types <- c("FluSight-baseline", "FluSight-base_seasonal", "FluSight-equal_cat")
+baseline_folders <- c("Flusight-baseline", "Flusight-seasonal-baseline", "Flusight-equal_cat")
 
-  baseline_types <- c("FluSight-baseline", "FluSight-base_seasonal", "FluSight-equal_cat")
-  baseline_folders <- c("Flusight-baseline", "Flusight-seasonal-baseline", "Flusight-equal_cat")
+validation_messages <- c()
 
-  validation_messages <- c("### 🧪 Validation Results")
+for (i in seq_along(baseline_types)) {
+  type <- baseline_types[i]
+  folder <- baseline_folders[i]
+  filename <- paste0(date_str, "-", type, ".csv")
+  file_url <- paste0(
+    "https://raw.githubusercontent.com/cdcepi/Flusight-baseline/main/weekly-submission/forecasts/",
+    folder, "/", filename
+  )
 
-  for (i in seq_along(baseline_types)) {
-    type <- baseline_types[i]
-    folder <- baseline_folders[i]
-    filename <- paste0(date_str, "-", type, ".csv")
+  target_dir <- file.path("model-output", type)
+  dir_create(target_dir, recurse = TRUE)
+  destfile <- file.path(target_dir, filename)
 
-    # Build URL and destination
-    file_url <- paste0(
-      "https://raw.githubusercontent.com/cdcepi/Flusight-baseline/main/weekly-submission/forecasts/",
-      folder, "/", filename
-    )
+  # Download the file
+  download_success <- tryCatch({
+    download.file(url = file_url, destfile = destfile, method = "libcurl")
+    cat("✅ Downloaded:", destfile, "\n")
+    TRUE
+  }, error = function(e) {
+    cat("❌ Failed to download", filename, ":", e$message, "\n")
+    FALSE
+  })
 
-    target_dir <- file.path("model-output", type)
-    dir_create(target_dir, recurse = TRUE)
-    destfile <- file.path(target_dir, filename)
+  # Validate the file
+  if (download_success) {
     rel_path <- file.path(type, filename)
-
-    # Attempt download
-    download_success <- tryCatch({
-      download.file(url = file_url, destfile = destfile, method = "libcurl")
-      cat("✅ Downloaded and saved:", destfile, "\n")
-      TRUE
+    v <- tryCatch({
+      result <- hubValidations::validate_submission(hub_path = ".", file_path = rel_path)
+      hubValidations::check_for_errors(result)
+      paste0("✅ **", rel_path, "** passed validation.")
     }, error = function(e) {
-      cat("❌ Failed to download", filename, "\nReason:", e$message, "\n")
-      validation_messages <- c(validation_messages, paste0("❌ **", rel_path, "**: Failed to download (", e$message, ")"))
-      FALSE
+      paste0("❌ **", rel_path, "**:\n\n", e$message)
     })
 
-    # Attempt validation if file was downloaded
-    if (download_success) {
-      cat("🔍 Validating:", destfile, "\n")
-      tryCatch({
-       v <- hubValidations::validate_submission(hub_path = ".", file_path = rel_path)
-
-# Manually extract and format error messages
-if (!is.null(v$errors) && length(v$errors) > 0) {
-  formatted_errors <- paste0("❌ **", rel_path, "**:\n- ", paste(v$errors, collapse = "\n- "))
-  validation_messages <- c(validation_messages, formatted_errors)
-} else {
-  validation_messages <- c(validation_messages, paste0("✅ **", rel_path, "** passed validation."))
+    validation_messages <- c(validation_messages, v)
+  }
 }
 
-
-        validation_messages <- c(validation_messages, error_report)
-
-      }, error = function(e) {
-        msg <- paste0("❌ **", rel_path, "**:\n", e$message)
-        validation_messages <- c(validation_messages, msg)
-      })
-    }
-  }
-
-  # Write markdown to file
-  writeLines(validation_messages, result_file)
-
-}, error = function(e) {
-  # Fallback if something top-level crashes
-  writeLines(c("### 🧪 Validation Results", "❌ Script crashed:", e$message), result_file)
-})
+# Write validation summary to markdown
+writeLines(c("### 🧪 Validation Results", validation_messages), result_file)
