@@ -63,13 +63,19 @@ for (i in seq_along(baseline_types)) {
   }
 }
 
-# If there are validation errors, stop the script
+# At the end of the script
 if (length(validation_errors) > 0) {
   cat("\n⚠️ Some files failed validation:\n")
+  msg_lines <- c("### ❌ Validation failed for some files:\n")
+
   for (err in validation_errors) {
-    cat(" -", err$file, ":", err$error, "\n")
+    msg_line <- paste0("- **", err$file, "**: ", err$error)
+    msg_lines <- c(msg_lines, msg_line)
+    cat(msg_line, "\n")
   }
-  quit(status = 1)
+
+  # Save the messages to a file that the workflow can read
+  writeLines(msg_lines, "validation_result.md")
 } else {
-  cat("\n✅ All downloaded baseline forecasts passed validation.\n")
+  writeLines("✅ All baseline files passed validation.", "validation_result.md")
 }
