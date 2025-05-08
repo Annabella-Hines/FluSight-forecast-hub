@@ -6,17 +6,18 @@ library(fs)
 # Prepare output file for PR body
 result_file <- "validation_result.md"
 
-# Wrap entire script to catch any unexpected errors
+# Wrap the entire script in a top-level tryCatch
 tryCatch({
 
-  # Set up date and file paths
+  # Set up reference date and file names
   current_ref_date <- ceiling_date(Sys.Date(), "week") - days(1)
   date_str <- format(current_ref_date, "%Y-%m-%d")
 
   baseline_types <- c("FluSight-baseline", "FluSight-base_seasonal", "FluSight-equal_cat")
   baseline_folders <- c("Flusight-baseline", "Flusight-seasonal-baseline", "Flusight-equal_cat")
 
-  downloaded_files <- c()  # Keep track of successfully downloaded files
+  downloaded_files <- c()
+  validation_results <- list()
 
   for (i in seq_along(baseline_types)) {
     type <- baseline_types[i]
@@ -29,58 +30,62 @@ tryCatch({
     )
 
     target_dir <- file.path("model-output", type)
-    dir.create(target_dir, recursive = TRUE, showWarnings = FALSE)
+    dir_create(target_dir, recurse = TRUE)
     destfile <- file.path(target_dir, filename)
 
-    # Attempt to download file
+    # Attempt to download
     download_success <- tryCatch({
       download.file(url = file_url, destfile = destfile, method = "libcurl")
       cat("✅ Downloaded and saved:", destfile, "\n")
-      downloaded_files <- c(downloaded_files, file.path(type, filename))  # Relative path
+      downloaded_files <- c(downloaded_files, file.path(type, filename))
       TRUE
     }, error = function(e) {
-      cat("❌ Failed to download", filename, "\nReason:", e$message, "\n")
+      msg <- paste("❌ Failed to download", filename, "Reason:", e$message)
+      cat(msg, "\n")
+      validation_results[[file.path(type, filename)]] <- list(status = "error", message = msg)
       FALSE
     })
+
+    # Only attempt validation if download succeeded
+    if (download_success) {
+      file_path <- file.path(type, filename)
+      result <- tryCatch({
+        v <- hubValidations::validate_submission(hub_path = ".", file_path = file_path)
+
+        # Try to check for validation errors
+        err_msg <- tryCatch({
+          hubValidations::check_for_errors(v, verbose = TRUE)
+          NULL  # Passed
+        }, error = function(e) {
+          e$message  # Return error message
+        })
+
+        list(status = if (is.null(err_msg)) "pass" else "fail", message = err_msg)
+
+      }, error = function(e) {
+        list(status = "error", message = e$message)
+      })
+
+      validation_results[[file_path]] <- result
+    }
   }
 
-  # Now validate each successfully downloaded file
-  messages <- c()
-  has_errors <- FALSE
+  # Compose validation_result.md content
+  messages <- c("### 🧪 Validation Results")
 
-  for (file in downloaded_files) {
-    cat("🔍 Validating:", file, "\n")
-    result <- tryCatch({
-      v <- hubValidations::validate_submission(hub_path = ".", file_path = file)
-      errors <- tryCatch({
-  hubValidations::check_for_errors(result, verbose = TRUE)
-  NULL
-}, error = function(e) {
-  e$message
-})
-      if (length(errors$errors) > 0) {
-        has_errors <<- TRUE
-        paste0("❌ **", file, "**: ", paste(errors$errors, collapse = "; "))
-      } else {
-        paste0("✅ **", file, "** passed validation.")
-      }
-    }, error = function(e) {
-      has_errors <<- TRUE
-      paste0("❌ **", file, "**: ", e$message)
-    })
-    messages <- c(messages, result)
+  for (file in names(validation_results)) {
+    res <- validation_results[[file]]
+    if (res$status == "pass") {
+      messages <- c(messages, paste0("✅ **", file, "** passed validation."))
+    } else {
+      messages <- c(messages, paste0("❌ **", file, "**: ", res$message))
+    }
   }
 
-  # Write validation result to markdown
-  writeLines(c("### 🧪 Validation Results", messages), result_file)
+  writeLines(messages, result_file)
 
 }, error = function(e) {
-  # Catch-all to ensure script doesn't silently fail
-  writeLines(c(
-    "### ❌ Script crashed",
-    "",
-    paste0("```\n", e$message, "\n```")
-  ), result_file)
-  stop(e)  # Optional: re-throw if you want GitHub to fail the job
+  writeLines(c("### 🧪 Validation Results", "❌ Script failed unexpectedly:", e$message), result_file)
 })
+
 
