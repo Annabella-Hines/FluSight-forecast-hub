@@ -50,7 +50,7 @@ for (i in seq_along(baseline_types)) {
     cat("🔍 Validating:", destfile, "\n")
     validation_result <- tryCatch({
       # Assuming 'hub_path' is the path to your hub configuration
-      hub_path <- "path/to/your/hub"
+      hub_path <- "."
       validate_submission(hub_path,
         file_path = file.path(type, filename)
       ) %>%
