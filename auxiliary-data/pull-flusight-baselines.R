@@ -52,7 +52,12 @@ tryCatch({
     cat("🔍 Validating:", file, "\n")
     result <- tryCatch({
       v <- hubValidations::validate_submission(hub_path = ".", file_path = file)
-      errors <- hubValidations::check_for_errors(v, verbose = TRUE, stop_on_error = FALSE)
+      errors <- tryCatch({
+  hubValidations::check_for_errors(result, verbose = TRUE)
+  NULL
+}, error = function(e) {
+  e$message
+})
       if (length(errors$errors) > 0) {
         has_errors <<- TRUE
         paste0("❌ **", file, "**: ", paste(errors$errors, collapse = "; "))
