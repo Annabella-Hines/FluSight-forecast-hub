@@ -51,7 +51,7 @@ tryCatch({
   for (file in downloaded_files) {
     cat("🔍 Validating:", file, "\n")
     result <- tryCatch({
-      v <- hubValidations::validate_submission(hub_path = ".", path = file)
+      v <- hubValidations::validate_submission(hub_path = ".", file_path = file)
       errors <- hubValidations::check_for_errors(v, verbose = TRUE, stop_on_error = FALSE)
       if (length(errors$errors) > 0) {
         has_errors <<- TRUE
