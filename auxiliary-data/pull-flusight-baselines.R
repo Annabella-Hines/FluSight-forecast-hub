@@ -60,20 +60,39 @@ tryCatch({
     }
   }
 
-  # Write results for PR body
-  if (length(validation_errors) > 0) {
-    msg_lines <- c("### ❌ Validation failed for some files:\n")
-    for (err in validation_errors) {
-      msg_lines <- c(msg_lines, paste0("- **", err$file, "**: ", err$error))
-    }
-    writeLines(msg_lines, result_file)
-  } else {
-    writeLines("✅ All baseline files passed validation.", result_file)
-  }
 
-}, error = function(e) {
-  # If script crashes, still write something to result file
-  msg <- paste("### ❌ Validation script crashed:\n", e$message)
-  writeLines(msg, result_file)
-  cat(msg, "\n")
-})
+# Run validations and safely handle all errors
+results <- list()
+
+for (i in seq_along(downloaded_files)) {
+  file <- downloaded_files[[i]]
+  tryCatch({
+    v <- hubValidations::validate_file(hub_path = ".", path = file)
+    results[[file]] <- v
+  }, error = function(e) {
+    results[[file]] <- list(error = e$message)
+  })
+}
+
+# Compose result markdown
+messages <- c()
+has_errors <- FALSE
+
+for (file in names(results)) {
+  result <- results[[file]]
+  if (!is.null(result$error)) {
+    messages <- c(messages, paste0("❌ **", file, "**: ", result$error))
+    has_errors <- TRUE
+  } else {
+    errors_found <- hubValidations::check_for_errors(result, verbose = TRUE, stop_on_error = FALSE)
+    if (length(errors_found$errors) > 0) {
+      has_errors <- TRUE
+      messages <- c(messages, paste0("❌ **", file, "**: ", paste(errors_found$errors, collapse = "; ")))
+    } else {
+      messages <- c(messages, paste0("✅ **", file, "** passed validation."))
+    }
+  }
+}
+
+# Always write the validation result
+writeLines(c("### 🧪 Validation Results", messages), "validation_result.md")
