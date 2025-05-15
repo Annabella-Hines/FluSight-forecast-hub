@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   pull_ensembles:
-    if: github.repository_owner == 'cdcepi'
+    #if: github.repository_owner == 'cdcepi'
     runs-on: macOS-latest
     steps:    
       - name: Checkout repo
