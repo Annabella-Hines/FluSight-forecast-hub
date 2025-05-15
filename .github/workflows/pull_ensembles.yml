@@ -1,4 +1,4 @@
-name: Pull Ensembles
+name: Pull ensembles
 on:
   workflow_dispatch:
     inputs:
