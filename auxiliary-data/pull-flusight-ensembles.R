@@ -22,7 +22,7 @@ tryCatch({
   ensemble_types <- c("FluSight-ensemble", 
                       "FluSight-lop_norm", 
                       "FluSight-trained_mean", 
-                      "FluSight-trained_median", 
+                      "FluSight-trained_med", 
                       "FluSight-baseline_cat", 
                       "FluSight-equal_cat", 
                       "FluSight-ens_q_cat")
