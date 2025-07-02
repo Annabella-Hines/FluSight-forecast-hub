@@ -16,7 +16,7 @@ permissions:
 
 jobs:
   update_target_data:
-    if: github.repository_owner == 'cdcepi'
+    #if: github.repository_owner == 'cdcepi'
     runs-on: macOS-latest
     steps:    
       - name: Checkout repo
@@ -30,7 +30,9 @@ jobs:
       - name: Install dependencies
         run: |
           install.packages(c("here", "cli", "tidyr", "readr", "dplyr", "lubridate", "devtools"))
-          install.packages("RSocrata", repos = c("https://chicago.r-universe.dev", "https://cloud.r-project.org"))
+          install.packages("devtools", repos = "https://cloud.r-project.org")
+          devtools::install_github("Chicago/RSocrata")
+        #install.packages("RSocrata", repos = c("https://chicago.r-universe.dev", "https://cloud.r-project.org"))
         shell: Rscript {0}
       - name: Generate target csv files
         run:  Rscript target-data/get_target_data.R
