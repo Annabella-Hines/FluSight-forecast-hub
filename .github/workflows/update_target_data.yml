@@ -28,10 +28,16 @@ jobs:
         with:
           use-public-rspm: true
       - name: Install dependencies
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          install.packages(c("here", "cli", "tidyr", "readr", "dplyr", "lubridate", "devtools"))
-          install.packages("devtools", repos = "https://cloud.r-project.org")
-          devtools::install_github("Chicago/RSocrata@d3b847b")
+          install.packages(c("here", "cli", "tidyr", "readr", "dplyr", "lubridate", "remotes"), repos = "https://cloud.r-project.org")
+          remotes::install_github("Chicago/RSocrata")
+      #- name: Install dependencies
+        #run: |
+          #install.packages(c("here", "cli", "tidyr", "readr", "dplyr", "lubridate", "devtools"))
+          #install.packages("devtools", repos = "https://cloud.r-project.org")
+          #devtools::install_github("Chicago/RSocrata@d3b847b")
         #install.packages("RSocrata", repos = c("https://chicago.r-universe.dev", "https://cloud.r-project.org"))
         shell: Rscript {0}
       - name: Generate target csv files
